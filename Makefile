@@ -20,6 +20,7 @@ SPHINXBUILD		?= sphinx-build
 DOCSOURCEDIR    = docs
 DOCBUILDDIR     = dist/docs
 
+NAME != awk 'BEGIN {FS=" "} /name/ {print $$3; exit}' Cargo.toml
 
 # If defined, use these overrides
 ifneq (${pat}, )
@@ -64,6 +65,8 @@ run:
 
 dist:
 	cargo build --release
+	mkdir ./dist
+	cp ${BUILD}/release/lib${NAME}.dylib ./dist/${NAME}.so
 
 # Linting #####################################################################
 lint:

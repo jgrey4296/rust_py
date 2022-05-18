@@ -10,5 +10,4 @@ version = "0.7"
 features = ["extension-module"]
 
 [lib]
-name = "rust_py"
 crate-type = ["cdylib"]
