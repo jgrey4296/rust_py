@@ -1,17 +1,17 @@
-SHELL			:= /usr/local/bin/bash
-TOP				:= ./src
-MAIN            := .main.rs
-LOGLEVEL		:= WARNING
+SHELL		:= /usr/local/bin/bash
+LOGLEVEL	:= WARNING
 
-BUILD           := ./target
+RUST_TOP	:= ./rust_src
+PY_TOP		:= rust_py
+BUILD       := ./build
 
 # Testing variables:
-TEST_TARGET		?= ${TOP}
+TEST_TARGET		?= ${PY_TOP}
 TEST_PAT		:=
 TESTDIRS        :=
 
 # Clean variables:
-LOGS			!= find ${TOP} -name '*log.*'
+LOGS			!= find ${PY_TOP} -name '*log.*'
 
 # Documentation variables:
 doc_target		?= "html"
@@ -20,6 +20,7 @@ SPHINXBUILD		?= sphinx-build
 DOCSOURCEDIR    = docs
 DOCBUILDDIR     = dist/docs
 
+# Extracts the name of the produced rust binary
 NAME != awk 'BEGIN {FS=" "} /name/ {print $$3; exit}' Cargo.toml
 
 # If defined, use these overrides
@@ -57,16 +58,32 @@ rusthelp:
 	python -mwebbrowser "https://doc.rust-lang.org/book/title-page.html"
 
 # Building ####################################################################
-build:
+rust_debug:
 	cargo build
+	cp ${BUILD}/debug/lib${NAME}.dylib ${BUILD}/${NAME}.so
+
+rust_release:
+	cargo build --release
+	cp ${BUILD}/release/lib${NAME}.dylib ${BUILD}/${NAME}.so
+
+editlib:
+	pip install -e .
+
+install:
+	pip install --use-feature=in-tree-build --src ${BUILD}/pip_temp -U .
+
+wheel:
+	pip wheel --use-feature=in-tree-build -w ${BUILD}/wheel --use-pep517 --src ${BUILD}/pip_temp .
+
+srcbuild:
+	pip install --use-feature=in-tree-build -t ${BUILD}/pip_src --src ${BUILD}/pip_temp -U .
+
+uninstall:
+	pip uninstall -y rust_py
 
 run:
 	cargo run
 
-dist:
-	cargo build --release
-	mkdir ./dist
-	cp ${BUILD}/release/lib${NAME}.dylib ./dist/${NAME}.so
 
 # Linting #####################################################################
 lint:
@@ -85,9 +102,9 @@ dtest: ${TESTDIRS}
 
 $(TESTDIRS):
 	@echo "--------------------"
-	@echo "Target: ${TOP}/$@"
+	@echo "Target: ${PY_TOP}/$@"
 	@echo "TODO: Dtest"
-	@echo "Target: ${TOP}/$@"
+	@echo "Target: ${PY_TOP}/$@"
 
 # Cleaning ####################################################################
 clean:
@@ -97,5 +114,4 @@ ifeq (${LOGS}, )
 else
 	-rm ${LOGS}
 endif
-	-rm -rf ./dist
 	-rm -rf ${BUILD}
